@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+// Created by Frankro.
+
 #include "opencv2/opencv.hpp"
 #include <iostream>
 
@@ -133,7 +135,3 @@ public:
 
 
 #endif // UTILS_H
-
-
-
-

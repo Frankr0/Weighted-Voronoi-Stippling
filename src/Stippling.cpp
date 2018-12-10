@@ -1,3 +1,5 @@
+// Created by Frankro.
+
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/opencv.hpp"
@@ -20,7 +22,7 @@ Point2f calcCentroPos(const vector<Point> &facet) {
 	Point2f centro(0.0f, 0.0f);
 
 	Moments moment = moments(facet, false);
-	
+
 	if (is_valid(moment.m10 / moment.m00) && is_valid(moment.m01 / moment.m00)) {
 		centro = Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
 	} else {
@@ -69,7 +71,7 @@ vector<Point2f> drawVoronoi(const Mat &input, Mat &output, Subdiv2D &subdiv ) {
 		circle(output, centers[i], 3, Scalar(), cv::FILLED, CV_8S, 0);
 
 		// Calculate Centroidal.
-		
+
 
 		// facetNormalize(output.size(), ifacet);
 
