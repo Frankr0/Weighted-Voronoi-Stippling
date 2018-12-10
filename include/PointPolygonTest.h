@@ -77,7 +77,8 @@ class PointPolygonTest {
 
     // Returns true if the point p lies inside the polygon[] with n vertices
     template <typename T>
-    static bool isInside(std::vector<Point_<T>> polygon, int n, Point_<T> p) {
+    static bool isInside(std::vector<Point_<T>> polygon, Point_<T> p) {
+        size_t n = polygon.size();
         // There must be at least 3 vertices in polygon[]
         if (n < 3)
             return false;
