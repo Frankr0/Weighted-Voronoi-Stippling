@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "SimplePolygon.h"
+#include "PointPolygonTest.h"
 
 using namespace cv;
 using namespace std;
