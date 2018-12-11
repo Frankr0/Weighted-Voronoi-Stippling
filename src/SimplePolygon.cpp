@@ -7,6 +7,6 @@ int main(int argc, char const *argv[]) {
 		Point(4, 1), Point(4, 2), Point(4, 3), Point(4, 4),
 	};
 
-	SimplePolygon<int>::Genarate(v);
+	SimplePolygon::genarate<int>(v);
 	return 0;
 }

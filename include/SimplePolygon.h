@@ -11,19 +11,22 @@
 using namespace cv;
 using namespace std;
 
-template<typename T>
+
 class SimplePolygon {
 public:
 
+	template<typename T>
 	static double calcDistanceSquare(const Point_<T> &p1, const Point_<T> &p2) {
 		return (p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y);
 	}
 
+	template<typename T>
 	static double calcGrandient(const Point_<T> &p1, const Point_<T> &p2) {
 		if (p1.x == p2.x) return p1.y < p2.y ? -DBL_MAX : DBL_MAX;
 		return static_cast<double> ( 1.0 * (p2.y - p1.y) / (p2.x - p1.x) );
 	}
 
+	template<typename T>
 	static typename vector<Point_<T> >::const_iterator
 	findStartPoint (const vector<Point_<T> > &pset) {
 		typename vector<Point_<T> >::const_iterator startPoint = pset.begin();
@@ -37,6 +40,7 @@ public:
 		return startPoint;
 	}
 
+	template<typename T>
 	static vector<Point_<T>> genarate(const vector<Point_<T>> &pset) {
 		auto startPoint = findStartPoint(pset);
 		vector<pair<Point_<T>, double> > vppd;
@@ -45,7 +49,6 @@ public:
 		for (auto i = pset.begin(); i != pset.end(); ++i) {
 			if (i == startPoint) continue;
 			double gradient = calcGrandient(*startPoint, *i);
-			cout << gradient << endl;
 			vppd.push_back( pair<Point_<T>, double>(*i, gradient) );
 		}
 

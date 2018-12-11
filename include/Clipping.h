@@ -1,15 +1,18 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef CLIPPING_H
+#define CLIPPING_H
 
 // Created by Frankro.
 
 #include "opencv2/opencv.hpp"
 #include <iostream>
 
+#include "PointPolygonTest.h"
+#include "SimplePolygon.h"
+
 using namespace cv;
 using namespace std;
 
-class Utils {
+class Clipping {
 public:
 
 	static double maxi(double arr[], int n) {
@@ -56,7 +59,7 @@ public:
 		negarr[0] = 0;
 
 		if ((p1 == 0 && q1 < 0) || (p3 == 0 && q3 < 0)) {
-			cout << "Line is parallel to clipping window!" << endl;
+			// cout << "Line is parallel to clipping window!" << endl;
 			return v;
 		}
 
@@ -86,6 +89,11 @@ public:
 		double rn1, rn2;
 		rn1 = maxi(negarr, negind); // maximum of negative array
 		rn2 = mini(posarr, posind); // minimum of positive array
+
+		if (rn1 > rn2)  { // reject
+			return v;
+		}
+
 		xn1 = x1 + p2 * rn1;
 		yn1 = y1 + p4 * rn1; // computing new points
 		xn2 = x1 + p2 * rn2;
@@ -111,14 +119,37 @@ public:
 			clipedPoly.insert(clipedPoly.end(), clipedLine.begin(), clipedLine.end());
 		}
 
-		// Add Corner Point.
-		if(pointPolygonTest(facet, Point_<T>(0, 0), false)) {
-			cout << "Bottom Left" << endl;
-			clipedPoly.push_back(Point_<T>(0, 0));
+		// Remove Outside Points.
+		for (auto i = clipedPoly.begin(); i != clipedPoly.end(); ++i) {
+			if (i->x < 0 || i->y < 0 || i->x > size.width - 1 || i->y > size.height - 1) {
+				i = --clipedPoly.erase(i);
+			}
 		}
+
+		// Add Corner Point.
+		vector<Point_<T>> cornerPoints = {
+			Point_<T>(0, 0),
+			Point_<T>(0, size.height - 1),
+			Point_<T>(size.width - 1, size.height - 1),
+			Point_<T>(size.width - 1, 0)
+		};
+
+		for (auto i = cornerPoints.cbegin(); i != cornerPoints.cend(); ++i) {
+			if (PointPolygonTest::isInside<T>(facet, *i))
+				clipedPoly.push_back(*i);
+		}
+
 		// Remove Duplicate Point.
+		sort(clipedPoly.begin(), clipedPoly.end(), [](Point_<T> a, Point_<T> b) {
+			if (a.x == b.x)
+				return a.y < b.y;
+			return a.x < b.x;
+		});
+		auto end_unique = unique(clipedPoly.begin(), clipedPoly.end());
+		clipedPoly.erase(end_unique, clipedPoly.end());
 
-
+		// Genarate Simple Polygon.
+		clipedPoly = SimplePolygon::genarate<int>(clipedPoly);
 		return clipedPoly;
 
 	}
@@ -127,11 +158,4 @@ public:
 
 
 
-
-
-
-
-
-
-
-#endif // UTILS_H
+#endif // CLIPPING_H

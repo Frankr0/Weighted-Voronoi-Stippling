@@ -2,8 +2,7 @@
 #define POINT_POLYGON_TEST_H
 
 // Created by Frankro.
-// From
-// https://www.geeksforgeeks.org/how-to-check-if-a-given-point-lies-inside-a-polygon/
+// From https://www.geeksforgeeks.org/how-to-check-if-a-given-point-lies-inside-a-polygon/
 
 #include "opencv2/opencv.hpp"
 #include <iostream>
@@ -14,13 +13,12 @@ using namespace std;
 #define INF 10000
 
 class PointPolygonTest {
-  public:
+public:
     // Given three colinear points p, q, r, the function checks if
     // point q lies on line segment 'pr'
     template <typename T>
     static bool onSegment(Point_<T> p, Point_<T> q, Point_<T> r) {
-        if (q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) &&
-            q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y))
+        if (q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) && q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y))
             return true;
         return false;
     }
@@ -42,8 +40,7 @@ class PointPolygonTest {
     // The function that returns true if line segment 'p1q1'
     // and 'p2q2' intersect.
     template <typename T>
-    static bool doIntersect(Point_<T> p1, Point_<T> q1, Point_<T> p2,
-                            Point_<T> q2) {
+    static bool doIntersect(Point_<T> p1, Point_<T> q1, Point_<T> p2, Point_<T> q2) {
         // Find the four orientations needed for general and
         // special cases
         int o1 = orientation(p1, q1, p2);

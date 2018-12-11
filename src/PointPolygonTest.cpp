@@ -8,7 +8,7 @@ int main(int argc, char const* argv[]) {
         Point(-10, 10),
     };
 
-    cout << PointPolygonTest::isInside<int>(v, Point(0, 0)) << endl;
+    cout << PointPolygonTest::isInside<int>(v, Point(10, 11)) << endl;
 
     return 0;
 }
