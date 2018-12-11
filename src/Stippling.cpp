@@ -21,6 +21,13 @@ Point2f calcCentroPos(const vector<Point> &facet) {
 	return centro;
 }
 
+Point2f calcDensityCentroPos(const Mat & densityMap, const vector<Point> &facet) {
+	Point2f centro(0.0f, 0.0f);
+	Moments moment = moments(facet, false);
+	centro = Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
+	return centro;
+}
+
 vector<Point2f> drawVoronoi(const Mat &input, Mat &output, Subdiv2D &subdiv) {
 
 	vector<vector<Point2f> > facets;
