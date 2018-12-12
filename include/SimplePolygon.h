@@ -1,8 +1,7 @@
+// Created by Frankro.
 
 #ifndef SIMPLEPOLYGON_H
 #define SIMPLEPOLYGON_H
-
-// Created by Frankro.
 
 #include "opencv2/opencv.hpp"
 #include <iostream>

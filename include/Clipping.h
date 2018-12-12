@@ -1,7 +1,8 @@
+// Created by Frankro.
+// From https://en.wikipedia.org/wiki/Liang%E2%80%93Barsky_algorithm
+
 #ifndef CLIPPING_H
 #define CLIPPING_H
-
-// Created by Frankro.
 
 #include "opencv2/opencv.hpp"
 #include <iostream>
@@ -150,6 +151,31 @@ public:
 
 		// Genarate Simple Polygon.
 		clipedPoly = SimplePolygon::genarate<int>(clipedPoly);
+
+
+
+
+		// cout << "origion:" << endl;
+		// for (auto i = facet.begin(); i != facet.end(); ++i) {
+		// 	cout << i->x << " " << i->y << endl;
+		// }
+		// cout << endl;
+
+		// cout << "clipedPoly:" << endl;
+		// for (auto i = clipedPoly.begin(); i != clipedPoly.end(); ++i) {
+		// 	cout << i->x << " " << i->y << endl;
+		// }
+		// cout << endl;
+
+		// Mat output = Mat::zeros(size, CV_8UC1);
+		// fillConvexPoly(output, clipedPoly, Scalar(255, 0, 100), 8, 0);
+		// imshow("output", output);
+		// waitKey(0);
+
+
+
+
+
 		return clipedPoly;
 
 	}
