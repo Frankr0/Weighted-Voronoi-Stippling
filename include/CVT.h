@@ -27,19 +27,22 @@ public:
 	template<typename T>
 	static Point2f calcDensityCentroPos(const Mat & densityMap, const vector<Point_<T>> &facet) {
 		Point2f centro(0.0f, 0.0f);
-	
+
 		// Crop Region.
 		Mat cropped = ROI::crop(densityMap, facet);
 		Rect corppedRect = boundingRect(facet);
 		cropped = cropped(corppedRect);
 
 		// Expand the Influence of Difference.
-		
+		Mat powerCropped;
+		cropped.convertTo(cropped, CV_32FC1);
+		powerCropped = cropped.mul(cropped);
+		powerCropped = powerCropped.mul(powerCropped);
+		powerCropped = powerCropped.mul(powerCropped);
 
-		
-		
-		Moments moment = moments(cropped, false);
+		Moments moment = moments(powerCropped, false);
 		centro = Point2f(moment.m10 / moment.m00 + corppedRect.x, moment.m01 / moment.m00 + corppedRect.y);
+
 		return centro;
 	}
 
@@ -56,20 +59,12 @@ public:
 
 			ifacet.assign(facets[i].begin(), facets[i].end());
 
-			// Scalar color;
-			// color[0] = rand() & 255;
-			// color[1] = rand() & 255;
-			// color[2] = rand() & 255;
-			// fillConvexPoly(output, ifacet, color, 8, 0);
-
-			// polylines(output, ifacet, true, Scalar(), 1, CV_8S, 0);
-			// circle(output, centers[i], 3, Scalar(), cv::FILLED, CV_8S, 0);
-
 			// Calculate Centroidal.
 			ifacet = Clipping::clipBound<int>(output.size(), ifacet);
 			// Point2f centroPoint = calcCentroPos(ifacet);
 			Point2f centroPoint = calcDensityCentroPos(input, ifacet);
-			circle(output, centroPoint, 1, Scalar(0, 255, 0), cv::FILLED, CV_8S, 0);
+
+			circle(output, centroPoint, 3, Scalar(0, 0, 0), cv::FILLED, CV_8S, 0);
 			centroPoints.push_back(centroPoint);
 		}
 

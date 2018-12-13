@@ -6,3 +6,4 @@ find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} include )
 
 add_subdirectory( src )
+add_subdirectory( test )

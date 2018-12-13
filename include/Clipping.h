@@ -16,17 +16,17 @@ using namespace std;
 class Clipping {
 public:
 
-	static double maxi(double arr[], int n) {
+	static double maxi(double arr[], size_t n) {
 		double m = 0;
-		for (int i = 0; i < n; ++i)
+		for (size_t i = 0; i < n; ++i)
 			if (m < arr[i])
 				m = arr[i];
 		return m;
 	}
 
-	static double mini(double arr[], int n) {
+	static double mini(double arr[], size_t n) {
 		double m = 1;
-		for (int i = 0; i < n; ++i)
+		for (size_t i = 0; i < n; ++i)
 			if (m > arr[i])
 				m = arr[i];
 		return m;
@@ -55,7 +55,7 @@ public:
 		double q3 = y1 - ymin;
 		double q4 = ymax - y1;
 		double posarr[5], negarr[5];
-		int posind = 1, negind = 1;
+		size_t posind = 1, negind = 1;
 		posarr[0] = 1;
 		negarr[0] = 0;
 
@@ -150,31 +150,7 @@ public:
 		clipedPoly.erase(end_unique, clipedPoly.end());
 
 		// Genarate Simple Polygon.
-		clipedPoly = SimplePolygon::genarate<int>(clipedPoly);
-
-
-
-
-		// cout << "origion:" << endl;
-		// for (auto i = facet.begin(); i != facet.end(); ++i) {
-		// 	cout << i->x << " " << i->y << endl;
-		// }
-		// cout << endl;
-
-		// cout << "clipedPoly:" << endl;
-		// for (auto i = clipedPoly.begin(); i != clipedPoly.end(); ++i) {
-		// 	cout << i->x << " " << i->y << endl;
-		// }
-		// cout << endl;
-
-		// Mat output = Mat::zeros(size, CV_8UC1);
-		// fillConvexPoly(output, clipedPoly, Scalar(255, 0, 100), 8, 0);
-		// imshow("output", output);
-		// waitKey(0);
-
-
-
-
+		clipedPoly = SimplePolygon::genarate<T>(clipedPoly);
 
 		return clipedPoly;
 

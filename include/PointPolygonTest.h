@@ -41,7 +41,7 @@ public:
     // 2 --> Counterclockwise
     template <typename T>
     static int orientation(Point_<T> p, Point_<T> q, Point_<T> r) {
-        int val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+        T val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 
         if (val == 0)
             return 0;             // colinear
@@ -112,9 +112,9 @@ public:
         Point_<T> extreme = {INF, p.y};
 
         // Count intersections of the above line with sides of polygon
-        int count = 0, i = 0;
+        size_t count = 0, i = 0;
         do {
-            int next = (i + 1) % n;
+            size_t next = (i + 1) % n;
 
             // Check if the line segment from 'p' to 'extreme' intersects
             // with the line segment from 'polygon[i]' to 'polygon[next]'
