@@ -28,5 +28,5 @@ This implementation has been written and tested on Manjaro using the following p
 		inverse image
 
 	image
-		image  for redering
+		image  for rendering
 ```

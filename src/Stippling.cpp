@@ -12,7 +12,7 @@ using namespace std;
 bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E, bool &drawRepeat) {
 	const String keys =
 	    "{help h usage ? |      | print this message     }"
-	    "{@image         |      | image  for redering    }"
+	    "{@image         |      | image  for rendering   }"
 	    "{N n number     |      | points number          }"
 	    "{inverse i      |      | inverse image          }"
 	    "{epoch e        |      | epochs number          }"
