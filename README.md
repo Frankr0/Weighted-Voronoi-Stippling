@@ -1,5 +1,4 @@
 # Weighted Voronoi Stippling
-----------
 
 This is an implementation of the following article using OpenCV:
 
