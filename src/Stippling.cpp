@@ -5,18 +5,21 @@
 #include "opencv2/opencv.hpp"
 #include <iostream>
 
+#include <fstream>
+
 #include "CVT.h"
 using namespace cv;
 using namespace std;
 
-bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E, bool &drawRepeat) {
+bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E,int &pointSize, bool &drawRepeat) {
 	const String keys =
-	    "{help h usage ? |      | print this message     }"
-	    "{@image         |      | image  for rendering   }"
-	    "{N n number     |      | points number          }"
-	    "{inverse i      |      | inverse image          }"
-	    "{epoch e        |      | epochs number          }"
-	    "{draw d         |      | draw result repeatedly }"
+	    "{help h usage ? |      | print this message      }"
+	    "{@image         |      | image for stippling     }"
+	    "{N n number     |      | points amount           }"
+	    "{inverse i      |      | inverse image           }"
+	    "{epoch e        |      | epochs                  }"
+	    "{size s         |      | point size              }"
+	    "{draw d         |      | show iterate processing }"
 	    ;
 
 	CommandLineParser parser(argc, argv, keys);
@@ -54,7 +57,13 @@ bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E, bool &draw
 	E = 100;
 	if (parser.has("epoch"))
 		E = parser.get<int>("epoch");
+	
+	// Set Point Size.
+	pointSize = 1;
+	if (parser.has("size"))
+		E = parser.get<int>("size");
 
+	// Show Processing.
 	drawRepeat = false;
 	if (parser.has("draw"))
 		drawRepeat = true;
@@ -69,13 +78,22 @@ bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E, bool &draw
 }
 
 
+void appendRandomPoint(RNG &rng, vector<Point2f> &points, Size size, int N) {
+	for (int i = 0; i < N; ++i) {
+		float x = rng.uniform((float)0, (float)size.width - 1);
+		float y = rng.uniform((float)0, (float)size.height - 1);
+		points.push_back(Point2f(x, y));
+	}
+}
+
 int main(int argc, char ** argv) {
 
+	RNG rng(time(0));
 	Mat img;
-	int N, E;
+	int N, E, pointSize;
 	bool drawRepeat;
 
-	if (!parserCommand(argc, argv, img, N, E, drawRepeat)) {
+	if (!parserCommand(argc, argv, img, N, E,pointSize, drawRepeat)) {
 		return -1;
 	}
 
@@ -88,15 +106,23 @@ int main(int argc, char ** argv) {
 	vector<Point2f> points;
 
 	// Add Points.
-	RNG rng;
-	for (int i = 0; i < N; ++i) {
-		float x = rng.uniform(0, size.width);
-		float y = rng.uniform(0, size.height);
-		points.push_back(Point2f(x, y));
-	}
+	appendRandomPoint(rng, points, size, 200);
 
 	Mat imgVoronoi(size.height, size.width, CV_8UC3, Scalar(255, 255, 255));
 	for (int i = 0; i < E; ++i) {
+
+		// Append Random Points.
+		if (i < (N / 200))
+			appendRandomPoint(rng, points, size, 200);
+
+		// Remove Out of range Points.
+		for (auto i = points.begin(); i != points.end(); ++i) {
+			if (i->x > size.width || i->x < 0 || i->y > size.height || i->y < 0) {
+				points.erase(i);
+				i--;
+			}
+		}
+
 		// Subdivision.
 		Rect rect(0, 0, size.width, size.height);
 		Subdiv2D subdiv(rect);
@@ -104,21 +130,23 @@ int main(int argc, char ** argv) {
 
 		// Subdiv Mat.
 		imgVoronoi = Scalar(255, 255, 255);
-		points = CVT::drawVoronoi(img, imgVoronoi, subdiv);
+		points = CVT::drawVoronoi(img, imgVoronoi, subdiv, pointSize);
 
 		// Show Image.
 		if (drawRepeat) {
 			waitKey(10);
 			imshow( "imgVoronoi", imgVoronoi);
-			
+
 		}
 
-		cout << "!" << flush;
+		cout << "(" << i << "/" << E << ")" << endl;
 
 	}
 	cout << endl << "done." << endl;
 	imshow( "imgVoronoi", imgVoronoi);
 	waitKey(0);
+
+	imwrite("save.jpg", imgVoronoi);
 
 	return 0;
 }

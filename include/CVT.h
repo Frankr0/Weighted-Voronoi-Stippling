@@ -5,6 +5,7 @@
 
 #include "opencv2/opencv.hpp"
 #include <iostream>
+#include <cmath>
 
 #include "Clipping.h"
 #include "ROI.h"
@@ -15,12 +16,17 @@ using namespace std;
 
 class CVT {
 public:
-
 	template<typename T>
 	static Point2f calcCentroPos(const vector<Point_<T>> &facet) {
 		Point2f centro(0.0f, 0.0f);
 		Moments moment = moments(facet, false);
 		centro = Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
+
+		// Small Region.
+		if (isnan(centro.x)) {
+			return facet[0];
+		}
+
 		return centro;
 	}
 
@@ -43,10 +49,15 @@ public:
 		Moments moment = moments(powerCropped, false);
 		centro = Point2f(moment.m10 / moment.m00 + corppedRect.x, moment.m01 / moment.m00 + corppedRect.y);
 
+		// Small Region.
+		if (isnan(centro.x)) {
+			return facet[0];
+		}
+
 		return centro;
 	}
 
-	static vector<Point2f> drawVoronoi(const Mat &input, Mat &output, Subdiv2D &subdiv) {
+	static vector<Point2f> drawVoronoi(const Mat &input, Mat &output, Subdiv2D &subdiv, const int &pointSize) {
 
 		vector<vector<Point2f> > facets;
 		vector<Point2f> centers;
@@ -64,7 +75,7 @@ public:
 			// Point2f centroPoint = calcCentroPos(ifacet);
 			Point2f centroPoint = calcDensityCentroPos(input, ifacet);
 
-			circle(output, centroPoint, 3, Scalar(0, 0, 0), cv::FILLED, CV_8S, 0);
+			circle(output, centroPoint, pointSize, Scalar(0, 0, 0), cv::FILLED, CV_8S, 0);
 			centroPoints.push_back(centroPoint);
 		}
 
