@@ -61,7 +61,7 @@ bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E,int &pointS
 	// Set Point Size.
 	pointSize = 1;
 	if (parser.has("size"))
-		E = parser.get<int>("size");
+		pointSize = parser.get<int>("size");
 
 	// Show Processing.
 	drawRepeat = false;
