@@ -4,6 +4,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/opencv.hpp"
 #include <iostream>
+#include <algorithm>
 
 #include <fstream>
 
@@ -11,25 +12,35 @@
 using namespace cv;
 using namespace std;
 
-bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E,int &pointSize, bool &drawRepeat) {
+// Named constants for magic numbers.
+static const int kBatchSize = 200;
+static const int kDefaultEpochs = 100;
+static const int kDefaultPointSize = 1;
+static const int kDensityScaleNum = 254;
+static const int kDensityScaleDen = 255;
+static const int kDisplayDelayMs = 10;
+static const Scalar kBackgroundColor(255, 255, 255);
+static const Scalar kForegroundColor(0, 0, 0);
+
+bool parseCommandLine(int argc, char ** argv, Mat &img, int &totalPoints, int &epochs, int &pointSize, bool &showProgress) {
 	const String keys =
-	    "{help h usage ? |      | print this message      }"
-	    "{@image         |      | image for stippling     }"
-	    "{N n number     |      | points amount           }"
-	    "{inverse i      |      | inverse image           }"
-	    "{epoch e        |      | epochs                  }"
-	    "{size s         |      | point size              }"
-	    "{draw d         |      | show iterate processing }"
+	    "{help h usage ? |      | print this message           }"
+	    "{@image         |      | image for stippling          }"
+	    "{N n number     |      | number of stipple points     }"
+	    "{invert i       |      | invert image brightness      }"
+	    "{epoch e        |      | number of iterations         }"
+	    "{size s         |      | stipple point radius         }"
+	    "{draw d         |      | show iteration progress      }"
 	    ;
 
 	CommandLineParser parser(argc, argv, keys);
-	parser.about("Weighted Voronoi Redering.");
+	parser.about("Weighted Voronoi Rendering.");
 	if (parser.has("help")) {
 		parser.printMessage();
 		return false;
 	}
 
-	// Open Image.
+	// Load image.
 	String imgPath = parser.get<String>(0);
 	if (imgPath.empty()) {
 		parser.printMessage();
@@ -37,38 +48,45 @@ bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E,int &pointS
 	}
 	img = imread(imgPath);
 	if (img.empty()) {
-		cout << "Error Loading File." << endl;
+		cout << "Error: failed to load image." << endl;
 		return false;
 	}
 	cvtColor(img, img, COLOR_BGR2GRAY);
 	const Size size = img.size();
 
-	// Inverse.
-	if (parser.has("inverse"))
+	// Invert brightness.
+	if (parser.has("invert"))
 		img = ~img;
 
-
-	// Set Points Number.
-	N = (size.height + size.width) * 2;
+	// Set total number of stipple points.
+	totalPoints = (size.height + size.width) * 2;
 	if (parser.has("n"))
-		N = parser.get<int>("n");
+		totalPoints = parser.get<int>("n");
 
-	// Set Epochs Number.
-	E = 100;
+	// Set number of iterations.
+	epochs = kDefaultEpochs;
 	if (parser.has("epoch"))
-		E = parser.get<int>("epoch");
-	
-	// Set Point Size.
-	pointSize = 1;
+		epochs = parser.get<int>("epoch");
+	if (epochs <= 0) {
+		cout << "Error: epoch must be positive." << endl;
+		return false;
+	}
+
+	// Set point size.
+	pointSize = kDefaultPointSize;
 	if (parser.has("size"))
 		pointSize = parser.get<int>("size");
+	if (pointSize <= 0) {
+		cout << "Error: point size must be positive." << endl;
+		return false;
+	}
 
-	// Show Processing.
-	drawRepeat = false;
+	// Show iteration progress.
+	showProgress = false;
 	if (parser.has("draw"))
-		drawRepeat = true;
+		showProgress = true;
 
-	// Check Parser Error.
+	// Check parser errors.
 	if (!parser.check()) {
 		parser.printErrors();
 		return false;
@@ -78,8 +96,8 @@ bool parserCommand(int argc, char ** argv, Mat &img , int &N, int &E,int &pointS
 }
 
 
-void appendRandomPoint(RNG &rng, vector<Point2f> &points, Size size, int N) {
-	for (int i = 0; i < N; ++i) {
+void appendRandomPoints(RNG &rng, vector<Point2f> &points, Size size, int count) {
+	for (int i = 0; i < count; ++i) {
 		float x = rng.uniform((float)0, (float)size.width - 1);
 		float y = rng.uniform((float)0, (float)size.height - 1);
 		points.push_back(Point2f(x, y));
@@ -90,63 +108,62 @@ int main(int argc, char ** argv) {
 
 	RNG rng(time(0));
 	Mat img;
-	int N, E, pointSize;
-	bool drawRepeat;
+	int totalPoints, epochs, pointSize;
+	bool showProgress;
 
-	if (!parserCommand(argc, argv, img, N, E,pointSize, drawRepeat)) {
+	if (!parseCommandLine(argc, argv, img, totalPoints, epochs, pointSize, showProgress)) {
 		return -1;
 	}
 
 	const Size size = img.size();
 
-	// To avoid the Density of dark region being too small.
-	img = img * 254 / 255 + 1;
+	// Scale density to [1, 255] to avoid zero-weight regions.
+	img = img * kDensityScaleNum / kDensityScaleDen + 1;
 
-	// Point Set.
+	// Point set.
 	vector<Point2f> points;
 
-	// Add Points.
-	appendRandomPoint(rng, points, size, 200);
+	// Seed initial points.
+	appendRandomPoints(rng, points, size, kBatchSize);
 
-	Mat imgVoronoi(size.height, size.width, CV_8UC3, Scalar(255, 255, 255));
-	for (int i = 0; i < E; ++i) {
+	Mat outputImage(size.height, size.width, CV_8UC3, kBackgroundColor);
+	for (int i = 0; i < epochs; ++i) {
 
-		// Append Random Points.
-		if (i < (N / 200))
-			appendRandomPoint(rng, points, size, 200);
+		// Gradually add more points.
+		if (i < (totalPoints / kBatchSize))
+			appendRandomPoints(rng, points, size, kBatchSize);
 
-		// Remove Out of range Points.
-		for (auto i = points.begin(); i != points.end(); ++i) {
-			if (i->x > size.width || i->x < 0 || i->y > size.height || i->y < 0) {
-				points.erase(i);
-				i--;
-			}
-		}
+		// Remove out-of-bounds points.
+		points.erase(
+			std::remove_if(points.begin(), points.end(), [&size](const Point2f &p) {
+				return p.x < 0 || p.x > size.width || p.y < 0 || p.y > size.height;
+			}),
+			points.end()
+		);
 
-		// Subdivision.
+		// Build Delaunay subdivision.
 		Rect rect(0, 0, size.width, size.height);
 		Subdiv2D subdiv(rect);
 		subdiv.insert(points);
 
-		// Subdiv Mat.
-		imgVoronoi = Scalar(255, 255, 255);
-		points = CVT::drawVoronoi(img, imgVoronoi, subdiv, pointSize);
+		// Compute Voronoi centroids and render stipples.
+		outputImage = kBackgroundColor;
+		points = CVT::computeVoronoiCentroids(img, outputImage, subdiv, pointSize);
 
-		// Show Image.
-		if (drawRepeat) {
-			waitKey(10);
-			imshow( "imgVoronoi", imgVoronoi);
-
+		// Display intermediate result.
+		if (showProgress) {
+			waitKey(kDisplayDelayMs);
+			imshow("Stippling", outputImage);
 		}
 
-		cout << "(" << i << "/" << E << ")" << endl;
+		cout << "(" << i << "/" << epochs << ")" << endl;
 
 	}
 	cout << endl << "done." << endl;
-	imshow( "imgVoronoi", imgVoronoi);
+	imshow("Stippling", outputImage);
 	waitKey(0);
 
-	imwrite("save.jpg", imgVoronoi);
+	imwrite("save.jpg", outputImage);
 
 	return 0;
 }

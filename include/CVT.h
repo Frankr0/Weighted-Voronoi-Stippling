@@ -17,69 +17,76 @@ using namespace std;
 class CVT {
 public:
 	template<typename T>
-	static Point2f calcCentroPos(const vector<Point_<T>> &facet) {
-		Point2f centro(0.0f, 0.0f);
+	static Point2f calcCentroid(const vector<Point_<T>> &facet) {
 		Moments moment = moments(facet, false);
-		centro = Point2f(moment.m10 / moment.m00, moment.m01 / moment.m00);
 
-		// Small Region.
-		if (isnan(centro.x)) {
+		// Guard against division by zero for degenerate regions.
+		if (std::abs(moment.m00) < 1e-10) {
 			return facet[0];
 		}
 
-		return centro;
+		Point2f centroid(moment.m10 / moment.m00, moment.m01 / moment.m00);
+
+		if (isnan(centroid.x)) {
+			return facet[0];
+		}
+
+		return centroid;
 	}
 
 	template<typename T>
-	static Point2f calcDensityCentroPos(const Mat & densityMap, const vector<Point_<T>> &facet) {
-		Point2f centro(0.0f, 0.0f);
-
-		// Crop Region.
+	static Point2f calcWeightedCentroid(const Mat & densityMap, const vector<Point_<T>> &facet) {
+		// Crop density map to facet bounding box.
 		Mat cropped = ROI::crop(densityMap, facet);
-		Rect corppedRect = boundingRect(facet);
-		cropped = cropped(corppedRect);
+		Rect croppedRect = boundingRect(facet);
+		cropped = cropped(croppedRect);
 
-		// Expand the Influence of Difference.
-		Mat powerCropped;
+		// Raise density to higher power to amplify contrast.
+		Mat weightedDensity;
 		cropped.convertTo(cropped, CV_32FC1);
-		powerCropped = cropped.mul(cropped);
-		powerCropped = powerCropped.mul(powerCropped);
-		powerCropped = powerCropped.mul(powerCropped);
+		weightedDensity = cropped.mul(cropped);
+		weightedDensity = weightedDensity.mul(weightedDensity);
+		weightedDensity = weightedDensity.mul(weightedDensity);
 
-		Moments moment = moments(powerCropped, false);
-		centro = Point2f(moment.m10 / moment.m00 + corppedRect.x, moment.m01 / moment.m00 + corppedRect.y);
+		Moments moment = moments(weightedDensity, false);
 
-		// Small Region.
-		if (isnan(centro.x)) {
+		// Guard against division by zero for degenerate regions.
+		if (std::abs(moment.m00) < 1e-10) {
 			return facet[0];
 		}
 
-		return centro;
+		Point2f centroid(moment.m10 / moment.m00 + croppedRect.x, moment.m01 / moment.m00 + croppedRect.y);
+
+		if (isnan(centroid.x)) {
+			return facet[0];
+		}
+
+		return centroid;
 	}
 
-	static vector<Point2f> drawVoronoi(const Mat &input, Mat &output, Subdiv2D &subdiv, const int &pointSize) {
+	static vector<Point2f> computeVoronoiCentroids(const Mat &input, Mat &output, Subdiv2D &subdiv, const int &pointSize) {
 
 		vector<vector<Point2f> > facets;
 		vector<Point2f> centers;
-		vector<Point2f> centroPoints;
+		vector<Point2f> centroids;
 		subdiv.getVoronoiFacetList(vector<int>(), facets, centers);
 
-		vector<Point> ifacet;
+		vector<Point> clippedFacet;
 
 		for ( size_t i = 0; i < facets.size(); i++ ) {
 
-			ifacet.assign(facets[i].begin(), facets[i].end());
+			clippedFacet.assign(facets[i].begin(), facets[i].end());
 
-			// Calculate Centroidal.
-			ifacet = Clipping::clipBound<int>(output.size(), ifacet);
-			// Point2f centroPoint = calcCentroPos(ifacet);
-			Point2f centroPoint = calcDensityCentroPos(input, ifacet);
+			// Clip Voronoi cell to image bounds and compute weighted centroid.
+			clippedFacet = Clipping::clipToBounds<int>(output.size(), clippedFacet);
+			// Point2f centroid = calcCentroid(clippedFacet);
+			Point2f centroid = calcWeightedCentroid(input, clippedFacet);
 
-			circle(output, centroPoint, pointSize, Scalar(0, 0, 0), cv::FILLED, CV_8S, 0);
-			centroPoints.push_back(centroPoint);
+			circle(output, centroid, pointSize, Scalar(0, 0, 0), cv::FILLED, cv::LINE_8, 0);
+			centroids.push_back(centroid);
 		}
 
-		return centroPoints;
+		return centroids;
 	}
 
 };

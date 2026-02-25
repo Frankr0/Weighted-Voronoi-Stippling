@@ -6,6 +6,8 @@
 
 #include "opencv2/opencv.hpp"
 #include <iostream>
+#include <cmath>
+#include <limits>
 
 using namespace cv;
 using namespace std;
@@ -15,21 +17,11 @@ using namespace std;
 class PointPolygonTest {
 public:
 
-    template<typename T>
-    static T min(const T &a, const T &b) {
-        return a < b ? a : b;
-    }
-
-    template<typename T>
-    static T max(const T &a, const T &b) {
-        return b < a ? a : b;
-    }
-
     // Given three colinear points p, q, r, the function checks if
     // point q lies on line segment 'pr'
     template <typename T>
     static bool onSegment(Point_<T> p, Point_<T> q, Point_<T> r) {
-        if (q.x <= max(p.x, r.x) && q.x >= min(p.x, r.x) && q.y <= max(p.y, r.y) && q.y >= min(p.y, r.y))
+        if (q.x <= std::max(p.x, r.x) && q.x >= std::min(p.x, r.x) && q.y <= std::max(p.y, r.y) && q.y >= std::min(p.y, r.y))
             return true;
         return false;
     }
@@ -43,7 +35,7 @@ public:
     static int orientation(Point_<T> p, Point_<T> q, Point_<T> r) {
         T val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 
-        if (val == 0)
+        if (std::abs(val) < static_cast<T>(1e-7))
             return 0;             // colinear
         return (val > 0) ? 1 : 2; // clock or counterclock wise
     }
@@ -98,10 +90,10 @@ public:
         T maxY = polygon[0].y;
         for (auto i = polygon.begin(); i != polygon.end(); ++i) {
             Point_<T> q = *i;
-            minX = min<T>(q.x, minX);
-            maxX = max<T>(q.x, maxX);
-            minY = min<T>(q.y, minY);
-            maxY = max<T>(q.y, maxY);
+            minX = std::min(q.x, minX);
+            maxX = std::max(q.x, maxX);
+            minY = std::min(q.y, minY);
+            maxY = std::max(q.y, maxY);
         }
         
         if ( p.x < minX || p.x > maxX || p.y < minY || p.y > maxY ) {
@@ -118,7 +110,6 @@ public:
 
             // Check if the line segment from 'p' to 'extreme' intersects
             // with the line segment from 'polygon[i]' to 'polygon[next]'
-            Point_<T> last(INF, INF);
             if (doIntersect(polygon[i], polygon[next], p, extreme)) {
                 // If the point 'p' is colinear with line segment 'i-next',
                 // then check if it lies on segment. If it lies, return true,

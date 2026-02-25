@@ -9,11 +9,11 @@ int main(int argc, char const *argv[]) {
 
 	// vector<Point> v = {Point(10, 10), Point(10, 250), Point(250, 270), Point(250, 10)};
 
-	// CVT::calcDensityCentroPos(img, v);
+	// CVT::calcWeightedCentroid(img, v);
 	// waitKey(0);
 
 
 	vector<Point> v = {Point2f(10, 10), Point2f(11, 10), Point2f(10, 11)};
-	cout << CVT::calcCentroPos(v) << endl;
+	cout << CVT::calcCentroid(v) << endl;
 	return 0;
 }

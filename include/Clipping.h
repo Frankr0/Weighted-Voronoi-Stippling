@@ -60,7 +60,6 @@ public:
 		negarr[0] = 0;
 
 		if ((p1 == 0 && q1 < 0) || (p3 == 0 && q3 < 0)) {
-			// cout << "Line is parallel to clipping window!" << endl;
 			return v;
 		}
 
@@ -106,28 +105,28 @@ public:
 	}
 
 	template<typename T>
-	static vector<Point_<T>> clipBound(const Size &size, const vector<Point_<T>> &facet) {
+	static vector<Point_<T>> clipToBounds(const Size &size, const vector<Point_<T>> &facet) {
 
-		// Clipping Polygon.
-		vector<Point_<T>> clipedPoly;
-		vector<Point_<T>> clipedLine;
-		for (auto i = facet.cbegin(); i != facet.cend(); ++i) {
-			if (i == facet.end() - 1)
-				clipedLine = liangBarsky(size, *i, *(facet.begin()) );
+		// Clip polygon edges to image bounds.
+		vector<Point_<T>> clippedPoly;
+		vector<Point_<T>> clippedLine;
+		for (auto it = facet.cbegin(); it != facet.cend(); ++it) {
+			if (it == facet.end() - 1)
+				clippedLine = liangBarsky(size, *it, *(facet.begin()) );
 			else
-				clipedLine = liangBarsky(size, *i, *(i + 1));
+				clippedLine = liangBarsky(size, *it, *(it + 1));
 
-			clipedPoly.insert(clipedPoly.end(), clipedLine.begin(), clipedLine.end());
+			clippedPoly.insert(clippedPoly.end(), clippedLine.begin(), clippedLine.end());
 		}
 
-		// Remove Outside Points.
-		for (auto i = clipedPoly.begin(); i != clipedPoly.end(); ++i) {
-			if (i->x < 0 || i->y < 0 || i->x > size.width - 1 || i->y > size.height - 1) {
-				i = --clipedPoly.erase(i);
+		// Remove points outside the bounds.
+		for (auto it = clippedPoly.begin(); it != clippedPoly.end(); ++it) {
+			if (it->x < 0 || it->y < 0 || it->x > size.width - 1 || it->y > size.height - 1) {
+				it = --clippedPoly.erase(it);
 			}
 		}
 
-		// Add Corner Point.
+		// Add image corner points that lie inside the original polygon.
 		vector<Point_<T>> cornerPoints = {
 			Point_<T>(0, 0),
 			Point_<T>(0, size.height - 1),
@@ -135,24 +134,24 @@ public:
 			Point_<T>(size.width - 1, 0)
 		};
 
-		for (auto i = cornerPoints.cbegin(); i != cornerPoints.cend(); ++i) {
-			if (PointPolygonTest::isInside<T>(facet, *i))
-				clipedPoly.push_back(*i);
+		for (auto it = cornerPoints.cbegin(); it != cornerPoints.cend(); ++it) {
+			if (PointPolygonTest::isInside<T>(facet, *it))
+				clippedPoly.push_back(*it);
 		}
 
-		// Remove Duplicate Point.
-		sort(clipedPoly.begin(), clipedPoly.end(), [](Point_<T> a, Point_<T> b) {
+		// Remove duplicate points.
+		sort(clippedPoly.begin(), clippedPoly.end(), [](Point_<T> a, Point_<T> b) {
 			if (a.x == b.x)
 				return a.y < b.y;
 			return a.x < b.x;
 		});
-		auto end_unique = unique(clipedPoly.begin(), clipedPoly.end());
-		clipedPoly.erase(end_unique, clipedPoly.end());
+		auto endUnique = unique(clippedPoly.begin(), clippedPoly.end());
+		clippedPoly.erase(endUnique, clippedPoly.end());
 
-		// Genarate Simple Polygon.
-		clipedPoly = SimplePolygon::genarate<T>(clipedPoly);
+		// Generate simple polygon from the point set.
+		clippedPoly = SimplePolygon::generate<T>(clippedPoly);
 
-		return clipedPoly;
+		return clippedPoly;
 
 	}
 
